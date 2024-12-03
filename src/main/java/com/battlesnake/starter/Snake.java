@@ -80,13 +80,23 @@ public class Snake {
                 JsonNode parsedRequest = JSON_MAPPER.readTree(req.body());
                 String uri = req.uri();
                 LOG.info("{} called with: {}", uri, req.body());
-                Map<String, String> snakeResponse = switch (uri) {
-                    case "/" -> index();
-                    case "/start" -> start(parsedRequest);
-                    case "/move" -> move(parsedRequest);
-                    case "/end" -> end(parsedRequest);
-                    default -> throw new IllegalAccessError("Strange call made to the snake: " + uri);
-                };
+                Map<String, String> snakeResponse;
+                switch (uri) {
+                    case "/":
+                        snakeResponse = index();
+                        break;
+                    case "/start":
+                        snakeResponse = start(parsedRequest);
+                        break;
+                    case "/move":
+                        snakeResponse = move(parsedRequest);
+                        break;
+                    case "/end":
+                        snakeResponse = end(parsedRequest);
+                        break;
+                    default:
+                        throw new IllegalAccessError("Strange call made to the snake: " + uri);
+                }
 
                 LOG.info("Responding with: {}", JSON_MAPPER.writeValueAsString(snakeResponse));
 
