@@ -154,11 +154,11 @@ public class Snake {
 
         public Map<String, String> move(JsonNode moveRequest) {
 
-            try {
+            /*try {
                 LOG.info("Data: {}", JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(moveRequest));
             } catch (JsonProcessingException e) {
                 LOG.error("Error parsing payload", e);
-            }
+            }*/
 
             /*
              * Example how to retrieve data from the request payload:
@@ -263,7 +263,7 @@ public class Snake {
                 }
             }
 
-            final String moveString = nextMove.toString();
+            final String moveString = nextMove.toString().toLowerCase();
             LOG.info("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScores));
             LOG.info("LargeCavity for " + string);
 
@@ -367,12 +367,12 @@ public class Snake {
             }
 
             Set<Coord> queued = new HashSet<>();
-            List<Coord> queue = new ArrayList<>();
-            queue.add(pos);
+            Stack<Coord> stack = new Stack<>();
+            stack.push(pos);
             int cavitySize = 0;
 
-            while (queue.size() > 0) {
-                Coord current = queue.get(0);
+            while (stack.size() > 0) {
+                Coord current = stack.pop();
 
                 cavitySize++;
 
@@ -380,7 +380,7 @@ public class Snake {
                 for (Coord neighbor : neighbors) {
                     if (!isOccupied[neighbor.x][neighbor.y]) {
                         if (!queued.contains(neighbor)) {
-                            queue.add(neighbor);
+                            stack.add(neighbor);
                             queued.add(neighbor);
                         }
                     }

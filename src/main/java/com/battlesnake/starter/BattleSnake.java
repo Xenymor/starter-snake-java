@@ -22,5 +22,6 @@ public class BattleSnake {
         health = jsonNode.get("health").asInt();
         latency = jsonNode.get("latency").asText();
         shout = jsonNode.get("shout").asText();
+        head = new Coord(jsonNode.get("head"));
     }
 }
