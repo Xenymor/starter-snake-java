@@ -8,19 +8,13 @@ import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Response;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
-import static spark.Spark.port;
-import static spark.Spark.post;
-import static spark.Spark.get;
+import static spark.Spark.*;
 
 /**
- * This is a simple Battlesnake server written in Java.
- * 
+ * This is a simple BattleSnake server written in Java.
+ * <p>
  * For instructions see
  * https://github.com/BattlesnakeOfficial/starter-snake-java/README.md
  */
@@ -37,7 +31,7 @@ public class Snake {
     public static void main(String[] args) {
         String port = System.getProperty("PORT");
         if (port == null) {
-            LOG.info("Using default port: {}", port);
+            LOG.info("Using default port: {}", (Object) null);
             port = "8080";
         } else {
             LOG.info("Found system provided port: {}", port);
@@ -50,7 +44,7 @@ public class Snake {
     }
 
     /**
-     * Handler class for dealing with the routes set up in the main method.
+     * Handler class for dealing with the routes set UP in the main method.
      */
     public static class Handler {
 
@@ -58,31 +52,41 @@ public class Snake {
          * For the start/end request
          */
         private static final Map<String, String> EMPTY = new HashMap<>();
+        private static final int LEFT = 0;
+        private static final int RIGHT = 1;
+        private static final int UP = 2;
+        private static final int DOWN = 3;
+
+        Coord head;
+        int[] moveScores;
+        BattleSnake me;
+        Coord[] body;
+        Coord[] food;
+        Board board;
+
+        boolean[][] isOccupied;
+
+        final int DIE_SCORE = -1_000_000;
+        final int FRUIT_SCORE = 20;
+        final int LOSING_DUEL_SCORE = -50;
+        final int WINNING_DUEL_SCORE = 10;
+        final int LARGE_CAVITY_SCORE = 70;
 
         /**
          * Generic processor that prints out the request and response from the methods.
-         *
-         * @param req
-         * @param res
-         * @return
          */
         public Map<String, String> process(Request req, Response res) {
             try {
                 JsonNode parsedRequest = JSON_MAPPER.readTree(req.body());
                 String uri = req.uri();
                 LOG.info("{} called with: {}", uri, req.body());
-                Map<String, String> snakeResponse;
-                if (uri.equals("/")) {
-                    snakeResponse = index();
-                } else if (uri.equals("/start")) {
-                    snakeResponse = start(parsedRequest);
-                } else if (uri.equals("/move")) {
-                    snakeResponse = move(parsedRequest);
-                } else if (uri.equals("/end")) {
-                    snakeResponse = end(parsedRequest);
-                } else {
-                    throw new IllegalAccessError("Strange call made to the snake: " + uri);
-                }
+                Map<String, String> snakeResponse = switch (uri) {
+                    case "/" -> index();
+                    case "/start" -> start(parsedRequest);
+                    case "/move" -> move(parsedRequest);
+                    case "/end" -> end(parsedRequest);
+                    default -> throw new IllegalAccessError("Strange call made to the snake: " + uri);
+                };
 
                 LOG.info("Responding with: {}", JSON_MAPPER.writeValueAsString(snakeResponse));
 
@@ -94,54 +98,60 @@ public class Snake {
         }
 
         /**
-         * This method is called everytime your Battlesnake is entered into a game.
-         * 
-         * Use this method to decide how your Battlesnake is going to look on the board.
+         * This method is called everytime your BattleSnake is entered into a game.
+         * <p>
+         * Use this method to decide how your BattleSnake is going to look on the board.
          *
-         * @return a response back to the engine containing the Battlesnake setup
-         *         values.
+         * @return a response back to the engine containing the BattleSnake setUP
+         * values.
          */
         public Map<String, String> index() {
             Map<String, String> response = new HashMap<>();
             response.put("apiversion", "1");
-            response.put("author", ""); // TODO: Your Battlesnake Username
-            response.put("color", "#888888"); // TODO: Personalize
-            response.put("head", "default"); // TODO: Personalize
-            response.put("tail", "default"); // TODO: Personalize
+            response.put("author", "Xenymor");
+            response.put("color", "#e04a00");
+            response.put("head", "viper");
+            response.put("tail", "freckled");
             return response;
         }
 
         /**
-         * This method is called everytime your Battlesnake is entered into a game.
-         * 
-         * Use this method to decide how your Battlesnake is going to look on the board.
+         * This method is called everytime your BattleSnake is entered into a game.
+         * <p>
+         * Use this method to decide how your BattleSnake is going to look on the board.
          *
          * @param startRequest a JSON data map containing the information about the game
          *                     that is about to be played.
+         *
          * @return responses back to the engine are ignored.
          */
+
         public Map<String, String> start(JsonNode startRequest) {
-            LOG.info("START");
+            LOG.info("GAME START");
+            Board board = new Board(startRequest.get("board"));
+            isOccupied = new boolean[board.width][board.height];
             return EMPTY;
         }
 
         /**
          * This method is called on every turn of a game. It's how your snake decides
          * where to move.
-         * 
+         * <p>
          * Use the information in 'moveRequest' to decide your next move. The
          * 'moveRequest' variable can be interacted with as
          * com.fasterxml.jackson.databind.JsonNode, and contains all of the information
-         * about the Battlesnake board for each move of the game.
-         * 
+         * about the BattleSnake board for each move of the game.
+         * <p>
          * For a full example of 'json', see
          * https://docs.battlesnake.com/references/api/sample-move-request
          *
          * @param moveRequest JsonNode of all Game Board data as received from the
-         *                    Battlesnake Engine.
+         *                    BattleSnake Engine.
+         *
          * @return a Map<String,String> response back to the engine the single move to
-         *         make. One of "up", "down", "left" or "right".
+         * make. One of "UP", "DOWN", "LEFT" or "RIGHT".
          */
+
         public Map<String, String> move(JsonNode moveRequest) {
 
             try {
@@ -152,79 +162,243 @@ public class Snake {
 
             /*
              * Example how to retrieve data from the request payload:
-             * 
+             *
              * String gameId = moveRequest.get("game").get("id").asText();
-             * 
+             *
              * int height = moveRequest.get("board").get("height").asInt();
-             * 
+             *
              */
 
-            JsonNode head = moveRequest.get("you").get("head");
-            JsonNode body = moveRequest.get("you").get("body");
+            me = new BattleSnake(moveRequest.get("you"));
+            board = new Board(moveRequest.get("board"));
+            head = me.head;
+            body = me.body;
+            food = board.food;
 
-            ArrayList<String> possibleMoves = new ArrayList<>(Arrays.asList("up", "down", "left", "right"));
+            for (int i = 0; i < board.width; i++) {
+                Arrays.fill(isOccupied[i], false);
+            }
 
-            // Don't allow your Battlesnake to move back in on it's own neck
-            avoidMyNeck(head, body, possibleMoves);
+            moveScores = new int[]{0, 0, 0, 0};
 
-            // TODO: Using information from 'moveRequest', find the edges of the board and
-            // don't
-            // let your Battlesnake move beyond them board_height = ? board_width = ?
+            //Prevent your Battlesnake from moving out of bounds
 
-            // TODO Using information from 'moveRequest', don't let your Battlesnake pick a
-            // move
-            // that would hit its own body
+            if (head.x + 1 >= board.width) {
+                moveScores[RIGHT] += DIE_SCORE;
+            } else if (head.x <= 0) {
+                moveScores[LEFT] += DIE_SCORE;
+            }
+            if (head.y + 1 >= board.height) {
+                moveScores[UP] += DIE_SCORE;
+            } else if (head.y <= 0) {
+                moveScores[DOWN] += DIE_SCORE;
+            }
 
-            // TODO: Using information from 'moveRequest', don't let your Battlesnake pick a
-            // move
-            // that would collide with another Battlesnake
+            //Prevent your Battlesnake from colliding
+            //Consider duel fields
 
-            // TODO: Using information from 'moveRequest', make your Battlesnake move
-            // towards a
-            // piece of food on the board
+            BattleSnake[] opponents = board.snakes;
+            for (final BattleSnake battleSnake : opponents) {
+                Coord[] opponent = battleSnake.body;
+                markUnsafe(opponent);
+                if (!Objects.equals(me.id, battleSnake.id)) {
+                    handleDuelField(opponent[0], opponent.length);
+                }
+            }
+            Coord tail = body[body.length - 1];
+            isOccupied[tail.x][tail.y] = false;
 
-            // Choose a random direction to move in
-            final int choice = new Random().nextInt(possibleMoves.size());
-            final String move = possibleMoves.get(choice);
+            //Handle Cavities
+            Coord[] neighbors = getInBoardNeighbors(head);
+            StringBuilder string = new StringBuilder("LargeCavities: ");
 
-            LOG.info("MOVE {}", move);
+            for (int i = 0; i < neighbors.length; i++) {
+                int size = getCavitySize(neighbors[i]);
+                if (size >= 2 * me.body.length) {
+                    updateScore(neighbors[i], LARGE_CAVITY_SCORE);
+                    string.append(i).append(",");
+                }
+            }
 
-            Map<String, String> response = new HashMap<>();
-            response.put("move", move);
-            return response;
+            //Move towards food
+            int closestFoodIndex = -1;
+            int closestFoodDist = board.height + board.width + 5;
+            for (int i = 0; i < food.length; i++) {
+                int currDist = Math.abs(food[i].x - head.x) + Math.abs(food[i].y - head.y);
+                if (currDist < closestFoodDist) {
+                    closestFoodIndex = i;
+                    closestFoodDist = currDist;
+                }
+            }
+
+            if (closestFoodIndex != -1) {
+                Coord foodCoord = food[closestFoodIndex];
+                if (foodCoord.x != head.x) {
+                    if (foodCoord.x < head.x) {
+                        moveScores[LEFT] += FRUIT_SCORE;
+                        moveScores[RIGHT] -= FRUIT_SCORE;
+                    } else {
+                        moveScores[RIGHT] += FRUIT_SCORE;
+                        moveScores[LEFT] -= FRUIT_SCORE;
+                    }
+                }
+                if (foodCoord.y != head.y) {
+                    if (foodCoord.y < head.y) {
+                        moveScores[DOWN] += FRUIT_SCORE;
+                        moveScores[UP] -= FRUIT_SCORE;
+                    } else {
+                        moveScores[UP] += FRUIT_SCORE;
+                        moveScores[DOWN] -= FRUIT_SCORE;
+                    }
+                }
+            }
+
+            Move nextMove = null;
+            int maxScore = Integer.MIN_VALUE;
+            for (Move move : Move.values()) {
+                final int ordinal = move.ordinal();
+                if (moveScores[ordinal] >= maxScore) {
+                    maxScore = moveScores[ordinal];
+                    nextMove = move;
+                }
+            }
+
+            final String moveString = nextMove.toString();
+            LOG.info("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScores));
+            LOG.info("LargeCavity for " + string);
+
+            Map<String, String> answer = new HashMap<>();
+            answer.put("move", moveString);
+
+            LOG.info("MOVE {}", moveString);
+
+            return answer;
         }
 
-        /**
-         * Remove the 'neck' direction from the list of possible moves
-         * 
-         * @param head          JsonNode of the head position e.g. {"x": 0, "y": 0}
-         * @param body          JsonNode of x/y coordinates for every segment of a
-         *                      Battlesnake. e.g. [ {"x": 0, "y": 0}, {"x": 1, "y": 0},
-         *                      {"x": 2, "y": 0} ]
-         * @param possibleMoves ArrayList of String. Moves to pick from.
-         */
-        public void avoidMyNeck(JsonNode head, JsonNode body, ArrayList<String> possibleMoves) {
-            JsonNode neck = body.get(1);
-
-            if (neck.get("x").asInt() < head.get("x").asInt()) {
-                possibleMoves.remove("left");
-            } else if (neck.get("x").asInt() > head.get("x").asInt()) {
-                possibleMoves.remove("right");
-            } else if (neck.get("y").asInt() < head.get("y").asInt()) {
-                possibleMoves.remove("down");
-            } else if (neck.get("y").asInt() > head.get("y").asInt()) {
-                possibleMoves.remove("up");
+        public void markUnsafe(Coord[] fields) {
+            int max = fields.length;
+            if (!canEat(fields[0])) {
+                max--;
+            }
+            for (int i = 0; i < max; i++) {
+                Coord curr = fields[i];
+                isOccupied[curr.x][curr.y] = true;
+                updateScore(curr, DIE_SCORE);
             }
         }
 
+        public void handleDuelField(Coord otherHead, int length) {
+            Coord[] candidateFields = getNeighbors(otherHead);
+            for (Coord field : candidateFields) {
+                if (dist(head, field) == 1) {
+                    if (length >= body.length) {
+                        updateScore(field, LOSING_DUEL_SCORE);
+                    } else {
+                        updateScore(field, WINNING_DUEL_SCORE);
+                    }
+                }
+            }
+        }
+
+        public int dist(Coord field1, Coord field2) {
+            return Math.abs(field1.x - field2.x) + Math.abs(field1.y - field2.y);
+        }
+
+        public Coord[] getNeighbors(Coord pos) {
+            return new Coord[]{new Coord(pos.x + 1, pos.y), new Coord(pos.x - 1, pos.y), new Coord(pos.x, pos.y + 1), new Coord(pos.x, pos.y - 1)};
+        }
+
+        public void updateScore(Coord field, int change) {
+            int xDiff = field.x - head.x;
+            int yDiff = field.y - head.y;
+            if (Math.abs(xDiff) == 1 && yDiff == 0) {
+                if (xDiff < 0) {
+                    moveScores[LEFT] += change;
+                } else {
+                    moveScores[RIGHT] += change;
+                }
+            } else if (Math.abs(yDiff) == 1 && xDiff == 0) {
+                if (yDiff < 0) {
+                    moveScores[DOWN] += change;
+                } else {
+                    moveScores[UP] += change;
+                }
+            }
+        }
+
+        public boolean canEat(Coord head) {
+            Coord[] nextFields = getNeighbors(head);
+            for (Coord field : nextFields) {
+                for (final Coord coord : food) {
+                    if (field.x == coord.x && field.y == coord.y) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public Coord[] getInBoardNeighbors(Coord pos) {
+            int boardWidth = board.width;
+            int boardHeight = board.height;
+            int x = pos.x;
+            int y = pos.y;
+
+            List<Coord> neighbors = new ArrayList<>(4);
+
+            if (x + 1 < boardWidth) {
+                neighbors.add(new Coord(x + 1, y));
+            }
+            if (x - 1 >= 0) {
+                neighbors.add(new Coord(x - 1, y));
+            }
+            if (y + 1 < boardHeight) {
+                neighbors.add(new Coord(x, y + 1));
+            }
+            if (y - 1 >= 0) {
+                neighbors.add(new Coord(x, y - 1));
+            }
+            return neighbors.toArray(Coord[]::new);
+        }
+
+        public int getCavitySize(Coord pos) {
+            if (isOccupied[pos.x][pos.y]) {
+                return 0;
+            }
+
+            Set<Coord> queued = new HashSet<>();
+            List<Coord> queue = new ArrayList<>();
+            queue.add(pos);
+            int cavitySize = 0;
+
+            while (queue.size() > 0) {
+                Coord current = queue.get(0);
+
+                cavitySize++;
+
+                Coord[] neighbors = getInBoardNeighbors(current);
+                for (Coord neighbor : neighbors) {
+                    if (!isOccupied[neighbor.x][neighbor.y]) {
+                        if (!queued.contains(neighbor)) {
+                            queue.add(neighbor);
+                            queued.add(neighbor);
+                        }
+                    }
+                }
+            }
+
+            return cavitySize;
+        }
+
         /**
-         * This method is called when a game your Battlesnake was in ends.
-         * 
+         * This method is called when a game your BattleSnake was in ends.
+         * <p>
          * It is purely for informational purposes, you don't have to make any decisions
          * here.
          *
          * @param endRequest a map containing the JSON sent to this snake. Use this data
          *                   to know which game has ended
+         *
          * @return responses back to the engine are ignored.
          */
         public Map<String, String> end(JsonNode endRequest) {
