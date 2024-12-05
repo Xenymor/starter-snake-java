@@ -185,6 +185,10 @@ public class Snake {
             body = me.body;
             food = board.food;
 
+            if (moveRequest.get("turn").asInt() == 2) {
+                System.out.println();
+            }
+
             for (int i = 0; i < board.width; i++) {
                 Arrays.fill(isOccupied[i], false);
             }
@@ -231,7 +235,7 @@ public class Snake {
             }
 
             //Move towards food
-            int[][] foodDists = generateDistArray(food, board.width, board.height);
+            /*int[][] foodDists = generateDistArray(food, board.width, board.height);
 
             StringBuilder builder = new StringBuilder("\n");
             for (int y = foodDists[0].length - 1; y >= 0; y--) {
@@ -257,7 +261,7 @@ public class Snake {
                 } else if (dist > headDist) {
                     updateScore(neighbor, -FOOD_SCORE);
                 }
-            }
+            }*/
 
             Move nextMove = null;
             int maxScore = Integer.MIN_VALUE;
