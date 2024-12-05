@@ -276,16 +276,17 @@ public class Snake {
             for (Coord food : foodCoords) {
                 queue.add(food);
                 result[food.x][food.y] = 0;
+                visited.add(food);
             }
             while (queue.size() > 0) {
                 Coord curr = queue.poll();
                 int currDist = result[curr.x][curr.y];
-                visited.add(curr);
                 Coord[] neighbors = getInBoardNeighbors(curr);
                 for (Coord neighbor : neighbors) {
                     if (!visited.contains(neighbor) && !isOccupied[neighbor.x][neighbor.y]) {
                         result[neighbor.x][neighbor.y] = currDist + 1;
                         queue.add(neighbor);
+                        visited.add(neighbor);
                     }
                 }
             }
