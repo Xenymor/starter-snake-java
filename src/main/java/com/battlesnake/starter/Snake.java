@@ -280,13 +280,15 @@ public class Snake {
             }
             while (queue.size() > 0) {
                 Coord curr = queue.poll();
-                int currDist = result[curr.x][curr.y];
+                int currDist = result[curr.x][curr.y] + 1;
                 Coord[] neighbors = getInBoardNeighbors(curr);
                 for (Coord neighbor : neighbors) {
                     if (!visited.contains(neighbor) && !isOccupied[neighbor.x][neighbor.y]) {
-                        result[neighbor.x][neighbor.y] = currDist + 1;
-                        queue.add(neighbor);
-                        visited.add(neighbor);
+                        if (currDist < result[neighbor.x][neighbor.y]) {
+                            result[neighbor.x][neighbor.y] = currDist;
+                            queue.add(neighbor);
+                            visited.add(neighbor);
+                        }
                     }
                 }
             }
