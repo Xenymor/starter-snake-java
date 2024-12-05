@@ -67,7 +67,7 @@ public class Snake {
         boolean[][] isOccupied;
 
         final int DIE_SCORE = -1_000_000;
-        final int FRUIT_SCORE = 20;
+        final int FOOD_SCORE = 20;
         final int LOSING_DUEL_SCORE = -50;
         final int WINNING_DUEL_SCORE = 10;
         final int LARGE_CAVITY_SCORE = 70;
@@ -231,35 +231,16 @@ public class Snake {
             }
 
             //Move towards food
-            int closestFoodIndex = -1;
-            int closestFoodDist = board.height + board.width + 5;
-            for (int i = 0; i < food.length; i++) {
-                int currDist = Math.abs(food[i].x - head.x) + Math.abs(food[i].y - head.y);
-                if (currDist < closestFoodDist) {
-                    closestFoodIndex = i;
-                    closestFoodDist = currDist;
-                }
-            }
+            int[][] foodDists = generateDistArray(food, board.width, board.height);
 
-            if (closestFoodIndex != -1) {
-                Coord foodCoord = food[closestFoodIndex];
-                if (foodCoord.x != head.x) {
-                    if (foodCoord.x < head.x) {
-                        moveScores[LEFT] += FRUIT_SCORE;
-                        moveScores[RIGHT] -= FRUIT_SCORE;
-                    } else {
-                        moveScores[RIGHT] += FRUIT_SCORE;
-                        moveScores[LEFT] -= FRUIT_SCORE;
-                    }
-                }
-                if (foodCoord.y != head.y) {
-                    if (foodCoord.y < head.y) {
-                        moveScores[DOWN] += FRUIT_SCORE;
-                        moveScores[UP] -= FRUIT_SCORE;
-                    } else {
-                        moveScores[UP] += FRUIT_SCORE;
-                        moveScores[DOWN] -= FRUIT_SCORE;
-                    }
+            int headDist = foodDists[head.x][head.y];
+
+            for (Coord neighbor : neighbors) {
+                final int dist = foodDists[neighbor.x][neighbor.y];
+                if (dist < headDist) {
+                    updateScore(neighbor, FOOD_SCORE);
+                } else if (dist > headDist) {
+                    updateScore(neighbor, -FOOD_SCORE);
                 }
             }
 
@@ -273,7 +254,7 @@ public class Snake {
                 }
             }
 
-            final String moveString = nextMove.toString().toLowerCase();
+            final String moveString = Objects.requireNonNull(nextMove).toString().toLowerCase();
             LOG.info("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScores));
             LOG.info("LargeCavity for " + string);
 
@@ -283,6 +264,29 @@ public class Snake {
             LOG.info("MOVE {}", moveString);
 
             return answer;
+        }
+
+        private int[][] generateDistArray(final Coord[] foodCoords, final int width, final int height) {
+            int[][] result = new int[width][height];
+            Set<Coord> visited = new HashSet<>();
+            Queue<Coord> queue = new ArrayDeque<>();
+            for (Coord food : foodCoords) {
+                queue.add(food);
+                result[food.x][food.y] = 0;
+            }
+            while (queue.size() > 0) {
+                Coord curr = queue.poll();
+                int currDist = result[curr.x][curr.y];
+                visited.add(curr);
+                Coord[] neighbors = getInBoardNeighbors(curr);
+                for (Coord neighbor : neighbors) {
+                    if (!visited.contains(neighbor)) {
+                        result[neighbor.x][neighbor.y] = currDist + 1;
+                        queue.add(neighbor);
+                    }
+                }
+            }
+            return result;
         }
 
         public void markUnsafe(Coord[] fields) {
