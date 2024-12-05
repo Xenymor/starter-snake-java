@@ -8,6 +8,14 @@ public class Coord {
     final int x;
     final int y;
 
+    @Override
+    public String toString() {
+        return "Coord{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
+    }
+
     public Coord(final JsonNode jsonNode) {
         x = jsonNode.get("x").asInt();
         y = jsonNode.get("y").asInt();

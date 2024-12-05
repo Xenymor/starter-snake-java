@@ -233,7 +233,22 @@ public class Snake {
             //Move towards food
             int[][] foodDists = generateDistArray(food, board.width, board.height);
 
+            StringBuilder builder = new StringBuilder("\n");
+            for (int y = foodDists[0].length - 1; y >= 0; y--) {
+                for (final int[] foodDist : foodDists) {
+                    final int dist = foodDist[y];
+                    if (dist == Integer.MAX_VALUE) {
+                        builder.append("-");
+                    } else {
+                        builder.append(dist);
+                    }
+                }
+                builder.append("\n");
+            }
+            LOG.info(builder.toString());
+
             int headDist = foodDists[head.x][head.y];
+            neighbors = getInBoardNeighbors(head);
 
             for (Coord neighbor : neighbors) {
                 final int dist = foodDists[neighbor.x][neighbor.y];
