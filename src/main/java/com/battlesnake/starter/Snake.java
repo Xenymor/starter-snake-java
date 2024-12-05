@@ -268,6 +268,9 @@ public class Snake {
 
         private int[][] generateDistArray(final Coord[] foodCoords, final int width, final int height) {
             int[][] result = new int[width][height];
+            for (final int[] ints : result) {
+                Arrays.fill(ints, Integer.MAX_VALUE);
+            }
             Set<Coord> visited = new HashSet<>();
             Queue<Coord> queue = new ArrayDeque<>();
             for (Coord food : foodCoords) {
@@ -280,7 +283,7 @@ public class Snake {
                 visited.add(curr);
                 Coord[] neighbors = getInBoardNeighbors(curr);
                 for (Coord neighbor : neighbors) {
-                    if (!visited.contains(neighbor)) {
+                    if (!visited.contains(neighbor) && !isOccupied[neighbor.x][neighbor.y]) {
                         result[neighbor.x][neighbor.y] = currDist + 1;
                         queue.add(neighbor);
                     }
