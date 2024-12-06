@@ -235,7 +235,9 @@ public class Snake {
             }
 
             //Move towards food
-            /*int[][] foodDists = generateDistArray(food, board.width, board.height);
+            isOccupied[head.x][head.y] = false;
+            int[][] foodDists = generateDistArray(food, board.width, board.height);
+            isOccupied[head.x][head.y] = true;
 
             StringBuilder builder = new StringBuilder("\n");
             for (int y = foodDists[0].length - 1; y >= 0; y--) {
@@ -257,11 +259,15 @@ public class Snake {
             for (Coord neighbor : neighbors) {
                 final int dist = foodDists[neighbor.x][neighbor.y];
                 if (dist < headDist) {
-                    updateScore(neighbor, FOOD_SCORE);
+                    if (!updateScore(neighbor, FOOD_SCORE)) {
+                        System.out.println("???");
+                    }
                 } else if (dist > headDist) {
-                    updateScore(neighbor, -FOOD_SCORE);
+                    if (!updateScore(neighbor, -FOOD_SCORE)) {
+                        System.out.println("???");
+                    }
                 }
-            }*/
+            }
 
             Move nextMove = null;
             int maxScore = Integer.MIN_VALUE;
@@ -347,7 +353,7 @@ public class Snake {
             return new Coord[]{new Coord(pos.x + 1, pos.y), new Coord(pos.x - 1, pos.y), new Coord(pos.x, pos.y + 1), new Coord(pos.x, pos.y - 1)};
         }
 
-        public void updateScore(Coord field, int change) {
+        public boolean updateScore(Coord field, int change) {
             int xDiff = field.x - head.x;
             int yDiff = field.y - head.y;
             if (Math.abs(xDiff) == 1 && yDiff == 0) {
@@ -356,12 +362,16 @@ public class Snake {
                 } else {
                     moveScores[RIGHT] += change;
                 }
+                return true;
             } else if (Math.abs(yDiff) == 1 && xDiff == 0) {
                 if (yDiff < 0) {
                     moveScores[DOWN] += change;
                 } else {
                     moveScores[UP] += change;
                 }
+                return true;
+            } else {
+                return false;
             }
         }
 
