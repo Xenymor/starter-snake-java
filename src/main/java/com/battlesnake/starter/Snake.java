@@ -235,9 +235,10 @@ public class Snake {
             }
 
             //Move towards food
+            boolean resetValue = isOccupied[head.x][head.y];
             isOccupied[head.x][head.y] = false;
             int[][] foodDists = generateDistArray(food, board.width, board.height);
-            isOccupied[head.x][head.y] = true;
+            isOccupied[head.x][head.y] = resetValue;
 
             StringBuilder builder = new StringBuilder("\n");
             for (int y = foodDists[0].length - 1; y >= 0; y--) {
