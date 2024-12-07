@@ -226,12 +226,23 @@ public class Snake {
             Coord[] neighbors = getInBoardNeighbors(head);
             StringBuilder string = new StringBuilder("LargeCavities: ");
 
+            boolean largeCavityExists = false;
+            Coord biggestCavity = neighbors[0];
+            int biggestCavitySize = -1;
             for (int i = 0; i < neighbors.length; i++) {
                 int size = getCavitySize(neighbors[i]);
                 if (size >= 2 * me.body.length) {
                     updateScore(neighbors[i], LARGE_CAVITY_SCORE);
                     string.append(i).append(",");
+                    largeCavityExists = true;
                 }
+                if (size > biggestCavitySize) {
+                    biggestCavitySize = size;
+                    biggestCavity = neighbors[i];
+                }
+            }
+            if (!largeCavityExists) {
+                updateScore(biggestCavity, LARGE_CAVITY_SCORE);
             }
 
             //Move towards food
