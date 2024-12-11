@@ -39,7 +39,6 @@ public class Snake {
         } else {
             LOG.info("Found system provided port: {}", port);
         }
-
         port(Integer.parseInt(port));
         get("/", HANDLER::process, JSON_MAPPER::writeValueAsString);
         post("/start", HANDLER::process, JSON_MAPPER::writeValueAsString);
