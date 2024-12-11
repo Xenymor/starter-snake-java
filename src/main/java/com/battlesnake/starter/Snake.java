@@ -249,7 +249,8 @@ public class Snake {
             }
             if (!largeCavityExists) {
                 updateScore(biggestCavity, LARGE_CAVITY_SCORE, head, moveScores);
-                string.replace(0, string.length()-1, "Largest cavity: " + biggestCavity);
+                string = new StringBuilder();
+                string.append("Largest cavity: ").append(biggestCavity);
             }
 
             //Reduce Edge-Score
@@ -307,7 +308,7 @@ public class Snake {
 
             final String moveString = Objects.requireNonNull(nextMove).toString().toLowerCase();
             logInfo("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScores));
-            logInfo("LargeCavity for " + string);
+            logInfo(string.toString());
 
             Map<String, String> answer = new HashMap<>();
             answer.put("move", moveString);
