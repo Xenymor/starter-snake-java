@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Response;
 
+import java.io.*;
 import java.util.*;
 
 import static spark.Spark.*;
@@ -139,7 +140,7 @@ public class Snake {
          */
 
         public Map<String, String> start(JsonNode startRequest) {
-            LOG.info("GAME START");
+            logInfo("GAME START");
             Board board = new Board(startRequest.get("board"));
             isOccupied = new boolean[board.width][board.height];
             return EMPTY;
@@ -284,7 +285,7 @@ public class Snake {
                 }
                 builder.append("\n");
             }
-            LOG.info(builder.toString());
+            logInfo(builder.toString());
 
             int headDist = foodDists[head.x][head.y];
             neighbors = getInBoardNeighbors(head);
@@ -313,13 +314,13 @@ public class Snake {
             }
 
             final String moveString = Objects.requireNonNull(nextMove).toString().toLowerCase();
-            LOG.info("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScores));
-            LOG.info("LargeCavity for " + string);
+            logInfo("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScores));
+            logInfo("LargeCavity for " + string);
 
             Map<String, String> answer = new HashMap<>();
             answer.put("move", moveString);
 
-            LOG.info("MOVE {}", moveString);
+            logInfo("MOVE " + moveString);
 
             return answer;
         }
@@ -511,8 +512,31 @@ public class Snake {
          * @return responses back to the engine are ignored.
          */
         public Map<String, String> end(JsonNode endRequest) {
-            LOG.info("END");
+            logInfo("END");
             return EMPTY;
+        }
+    }
+
+    static BufferedWriter outputStream;
+
+    static {
+        try {
+            outputStream = new BufferedWriter(new FileWriter("logfile.log"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void logInfo(final String msg) {
+        LOG.info(msg);
+        try {
+            outputStream.append(msg);
+        } catch (IOException e) {
+            try {
+                outputStream.append(e.toString());
+            } catch (IOException ex) {
+                e.printStackTrace();
+            }
         }
     }
 
