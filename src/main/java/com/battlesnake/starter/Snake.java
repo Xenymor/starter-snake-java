@@ -241,7 +241,7 @@ public class Snake {
             StringBuilder string = new StringBuilder("LargeCavities: ");
 
             boolean largeCavityExists = false;
-            Coord biggestCavity = neighbors[0];
+            Coord biggestCavity = head;
             int biggestCavitySize = -1;
             for (int i = 0; i < neighbors.length; i++) {
                 int size = getCavitySize(neighbors[i]);
