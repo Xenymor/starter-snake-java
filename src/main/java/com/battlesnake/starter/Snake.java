@@ -260,6 +260,7 @@ public class Snake {
             }
             if (!largeCavityExists) {
                 updateScore(biggestCavity, LARGE_CAVITY_SCORE);
+                logInfo("Biggest cavity: " + biggestCavity);
             }
 
             //Reduce Edge-Score
