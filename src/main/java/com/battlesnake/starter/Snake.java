@@ -68,9 +68,11 @@ public class Snake {
 
         final int DIE_SCORE = -1_000_000;
         final int FOOD_SCORE = 20;
-        final int LOSING_DUEL_SCORE = -50;
+        final int CAPTURING_SCORE = 30;
+        final int LOSING_DUEL_SCORE = -60;
         final int WINNING_DUEL_SCORE = 10;
-        final int LARGE_CAVITY_SCORE = 70;
+        final int LARGE_CAVITY_SCORE = 80;
+        final int EDGE_SCORE = -1;
 
         /**
          * Generic processor that prints out the request and response from the methods.
@@ -185,10 +187,6 @@ public class Snake {
             body = me.body;
             food = board.food;
 
-            if (moveRequest.get("turn").asInt() == 2) {
-                System.out.println();
-            }
-
             for (int i = 0; i < board.width; i++) {
                 Arrays.fill(isOccupied[i], false);
             }
@@ -212,18 +210,34 @@ public class Snake {
             //Consider duel fields
 
             BattleSnake[] opponents = board.snakes;
+            boolean isHeadEdge = isEdge(head);
             for (final BattleSnake battleSnake : opponents) {
                 Coord[] opponent = battleSnake.body;
                 markUnsafe(opponent);
                 if (!Objects.equals(me.id, battleSnake.id)) {
-                    handleDuelField(opponent[0], opponent.length);
+                    final Coord opponentHead = opponent[0];
+                    handleDuelField(opponentHead, opponent.length);
+
+                    //Handle catching snakes on edge
+                    if (!isHeadEdge) {
+                        if (isEdge(opponentHead)) {
+                            if (isNeighbour(head, opponentHead)) {
+                                Coord[] moves = getInBoardNeighbors(opponentHead, true);
+                                if (moves.length == 1) {
+                                    updateScores(getInBoardNeighbors(moves[0], true), CAPTURING_SCORE);
+                                } else {
+                                    System.out.println("??? when checking for possible moves of caught snake");
+                                }
+                            }
+                        }
+                    }
                 }
             }
             Coord tail = body[body.length - 1];
             isOccupied[tail.x][tail.y] = false;
 
             //Handle Cavities
-            Coord[] neighbors = getInBoardNeighbors(head);
+            Coord[] neighbors = getInBoardNeighbors(head, true);
             StringBuilder string = new StringBuilder("LargeCavities: ");
 
             boolean largeCavityExists = false;
@@ -243,6 +257,13 @@ public class Snake {
             }
             if (!largeCavityExists) {
                 updateScore(biggestCavity, LARGE_CAVITY_SCORE);
+            }
+
+            //Reduce Edge-Score
+            for (Coord neighbor : neighbors) {
+                if (isEdge(neighbor)) {
+                    updateScore(neighbor, EDGE_SCORE);
+                }
             }
 
             //Move towards food
@@ -301,6 +322,20 @@ public class Snake {
             LOG.info("MOVE {}", moveString);
 
             return answer;
+        }
+
+        private void updateScores(final Coord[] fields, final int score) {
+            for (Coord field : fields) {
+                updateScore(field, score);
+            }
+        }
+
+        private boolean isNeighbour(final Coord coord1, final Coord coord2) {
+            return dist(coord1, coord2) == 1;
+        }
+
+        private boolean isEdge(final Coord pos) {
+            return pos.x == 0 || pos.x == board.width - 1 || pos.y == 0 || pos.y == board.height - 1;
         }
 
         private int[][] generateDistArray(final Coord[] foodCoords, final int width, final int height) {
@@ -400,6 +435,10 @@ public class Snake {
         }
 
         public Coord[] getInBoardNeighbors(Coord pos) {
+            return getInBoardNeighbors(pos, false);
+        }
+
+        private Coord[] getInBoardNeighbors(final Coord pos, final boolean mustBeFree) {
             int boardWidth = board.width;
             int boardHeight = board.height;
             int x = pos.x;
@@ -408,17 +447,26 @@ public class Snake {
             List<Coord> neighbors = new ArrayList<>(4);
 
             if (x + 1 < boardWidth) {
-                neighbors.add(new Coord(x + 1, y));
+                if (!mustBeFree || !isOccupied[pos.x][pos.y]) {
+                    neighbors.add(new Coord(x + 1, y));
+                }
             }
             if (x - 1 >= 0) {
-                neighbors.add(new Coord(x - 1, y));
+                if (!mustBeFree || !isOccupied[pos.x][pos.y]) {
+                    neighbors.add(new Coord(x - 1, y));
+                }
             }
             if (y + 1 < boardHeight) {
-                neighbors.add(new Coord(x, y + 1));
+                if (!mustBeFree || !isOccupied[pos.x][pos.y]) {
+                    neighbors.add(new Coord(x, y + 1));
+                }
             }
             if (y - 1 >= 0) {
-                neighbors.add(new Coord(x, y - 1));
+                if (!mustBeFree || !isOccupied[pos.x][pos.y]) {
+                    neighbors.add(new Coord(x, y - 1));
+                }
             }
+
             return neighbors.toArray(Coord[]::new);
         }
 
