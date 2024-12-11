@@ -447,22 +447,22 @@ public class Snake {
             List<Coord> neighbors = new ArrayList<>(4);
 
             if (x + 1 < boardWidth) {
-                if (!mustBeFree || !isOccupied[pos.x][pos.y]) {
+                if (!mustBeFree || !isOccupied[x + 1][y]) {
                     neighbors.add(new Coord(x + 1, y));
                 }
             }
             if (x - 1 >= 0) {
-                if (!mustBeFree || !isOccupied[pos.x][pos.y]) {
+                if (!mustBeFree || !isOccupied[x - 1][y]) {
                     neighbors.add(new Coord(x - 1, y));
                 }
             }
             if (y + 1 < boardHeight) {
-                if (!mustBeFree || !isOccupied[pos.x][pos.y]) {
+                if (!mustBeFree || !isOccupied[x][y + 1]) {
                     neighbors.add(new Coord(x, y + 1));
                 }
             }
             if (y - 1 >= 0) {
-                if (!mustBeFree || !isOccupied[pos.x][pos.y]) {
+                if (!mustBeFree || !isOccupied[x][y - 1]) {
                     neighbors.add(new Coord(x, y - 1));
                 }
             }
