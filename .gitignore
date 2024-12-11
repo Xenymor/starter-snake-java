@@ -8,3 +8,4 @@ target/
 .pmd
 bin/
 *.log
+*.sh
