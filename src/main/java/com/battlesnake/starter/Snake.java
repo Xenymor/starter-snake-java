@@ -137,6 +137,19 @@ public class Snake {
             return EMPTY;
         }
 
+
+        static class MoveScore {
+            public final Move bestMove;
+            public final int bestScore;
+            public final int[] moveScores;
+
+            public MoveScore(final Move bestMove, final int bestScore, final int[] moveScores) {
+                this.bestMove = bestMove;
+                this.bestScore = bestScore;
+                this.moveScores = moveScores;
+            }
+        }
+
         /**
          * This method is called on every turn of a game. It's how your snake decides
          * where to move.
@@ -156,22 +169,8 @@ public class Snake {
          * make. One of "UP", "DOWN", "LEFT" or "RIGHT".
          */
 
+
         public Map<String, String> move(JsonNode moveRequest) {
-
-            /*try {
-                LOG.info("Data: {}", JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(moveRequest));
-            } catch (JsonProcessingException e) {
-                LOG.error("Error parsing payload", e);
-            }*/
-
-            /*
-             * Example how to retrieve data from the request payload:
-             *
-             * String gameId = moveRequest.get("game").get("id").asText();
-             *
-             * int height = moveRequest.get("board").get("height").asInt();
-             *
-             */
 
             BattleSnake me = new BattleSnake(moveRequest.get("you"));
             Board board = new Board(moveRequest.get("board"));
@@ -182,6 +181,20 @@ public class Snake {
             final int height = board.height;
             boolean[][] isOccupied = new boolean[width][height];
 
+            MoveScore moveScore = getScore(me, board, head, body, food, width, height, isOccupied);
+
+            final String moveString = Objects.requireNonNull(moveScore.bestMove).toString().toLowerCase();
+            logInfo("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScore.moveScores));
+
+            Map<String, String> answer = new HashMap<>();
+            answer.put("move", moveString);
+
+            logInfo("MOVE " + moveString);
+
+            return answer;
+        }
+
+        private MoveScore getScore(final BattleSnake me, final Board board, final Coord head, final Coord[] body, final Coord[] food, final int width, final int height, final boolean[][] isOccupied) {
             int[] moveScores = new int[]{0, 0, 0, 0};
 
             //Prevent your Battlesnake from moving out of bounds
@@ -305,17 +318,9 @@ public class Snake {
                     nextMove = move;
                 }
             }
-
-            final String moveString = Objects.requireNonNull(nextMove).toString().toLowerCase();
-            logInfo("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScores));
             logInfo(string.toString());
 
-            Map<String, String> answer = new HashMap<>();
-            answer.put("move", moveString);
-
-            logInfo("MOVE " + moveString);
-
-            return answer;
+            return new MoveScore(nextMove, moveScores[nextMove.ordinal()], moveScores);
         }
 
         private void updateScores(final Coord[] fields, final int score, Coord head, int[] moveScores) {
