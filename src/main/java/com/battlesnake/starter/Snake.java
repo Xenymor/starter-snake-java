@@ -289,7 +289,13 @@ public class Snake {
 
             int headDist = foodDists[gameState.head.x][gameState.head.y];
             neighbors = getInBoardNeighbors(gameState.head, true, gameState);
-            int currFoodScore = gameState.me.health <= HP_THRESHOLD ? FOOD_SCORE * FOOD_SCORE_MULTIPLIER_WHEN_LOW : FOOD_SCORE;
+            int currFoodScore;
+            if (gameState.me.health <= HP_THRESHOLD) {
+                currFoodScore = FOOD_SCORE * FOOD_SCORE_MULTIPLIER_WHEN_LOW;
+                logInfo("Low on hp; Searching food");
+            } else {
+                currFoodScore = FOOD_SCORE;
+            }
 
             for (Coord neighbor : neighbors) {
                 final int dist = foodDists[neighbor.x][neighbor.y];
