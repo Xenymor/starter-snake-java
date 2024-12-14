@@ -25,6 +25,8 @@ public class Snake {
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final Handler HANDLER = new Handler();
     private static final Logger LOG = LoggerFactory.getLogger(Snake.class);
+    public static final int HP_THRESHOLD = 25;
+    public static final int FOOD_SCORE_MULTIPLIER_WHEN_LOW = 3;
 
     /**
      * Main entry point.
@@ -58,14 +60,14 @@ public class Snake {
         private static final int LEFT = 0;
         private static final int RIGHT = 1;
         private static final int UP = 2;
-        private static final int DOWN = 3;
+        private static final int DOWN = FOOD_SCORE_MULTIPLIER_WHEN_LOW;
 
         final int DIE_SCORE = -1_000_000;
         final int FOOD_SCORE = 20;
-        final int CAPTURING_SCORE = 30;
-        final int LOSING_DUEL_SCORE = -60;
-        final int WINNING_DUEL_SCORE = 10;
-        final int LARGE_CAVITY_SCORE = 80;
+        final int CAPTURING_SCORE = 50;
+        final int LOSING_DUEL_SCORE = -70;
+        final int WINNING_DUEL_SCORE = 45;
+        final int LARGE_CAVITY_SCORE = 200;
         final int EDGE_SCORE = -1;
 
         /**
@@ -287,15 +289,16 @@ public class Snake {
 
             int headDist = foodDists[gameState.head.x][gameState.head.y];
             neighbors = getInBoardNeighbors(gameState.head, true, gameState);
+            int currFoodScore = gameState.me.health <= HP_THRESHOLD ? FOOD_SCORE * FOOD_SCORE_MULTIPLIER_WHEN_LOW : FOOD_SCORE;
 
             for (Coord neighbor : neighbors) {
                 final int dist = foodDists[neighbor.x][neighbor.y];
                 if (dist < headDist) {
-                    if (!updateScore(neighbor, FOOD_SCORE, gameState.head, moveScores)) {
+                    if (!updateScore(neighbor, currFoodScore, gameState.head, moveScores)) {
                         System.out.println("???");
                     }
                 } else if (dist > headDist) {
-                    if (!updateScore(neighbor, -FOOD_SCORE, gameState.head, moveScores)) {
+                    if (!updateScore(neighbor, -currFoodScore, gameState.head, moveScores)) {
                         System.out.println("???");
                     }
                 }
