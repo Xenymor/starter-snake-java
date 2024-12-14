@@ -63,7 +63,7 @@ public class Snake {
         private static final int DOWN = FOOD_SCORE_MULTIPLIER_WHEN_LOW;
 
         final int DIE_SCORE = -1_000_000;
-        final int FOOD_SCORE = 20;
+        final int FOOD_SCORE = 10;
         final int CAPTURING_SCORE = 50;
         final int LOSING_DUEL_SCORE = -70;
         final int WINNING_DUEL_SCORE = 45;
