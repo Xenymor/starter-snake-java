@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LOG_FILE="./logfile.log"
+LOG_FILE="/root/snakeLogfile.log"
 # Function to log messages with timestamps
 log_message() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
