@@ -25,8 +25,6 @@ public class Snake {
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final Handler HANDLER = new Handler();
     private static final Logger LOG = LoggerFactory.getLogger(Snake.class);
-    public static final int HP_THRESHOLD = 25;
-    public static final int FOOD_SCORE_MULTIPLIER_WHEN_LOW = 3;
 
     /**
      * Main entry point.
@@ -60,7 +58,7 @@ public class Snake {
         private static final int LEFT = 0;
         private static final int RIGHT = 1;
         private static final int UP = 2;
-        private static final int DOWN = FOOD_SCORE_MULTIPLIER_WHEN_LOW;
+        private static final int DOWN = 3;
 
         final int DIE_SCORE = -1_000_000;
         final int FOOD_SCORE = 10;
@@ -69,6 +67,8 @@ public class Snake {
         final int WINNING_DUEL_SCORE = 45;
         final int LARGE_CAVITY_SCORE = 200;
         final int EDGE_SCORE = -1;
+        final int HP_THRESHOLD = 25;
+        final int FOOD_SCORE_MULTIPLIER_WHEN_LOW = 3;
 
         /**
          * Generic processor that prints out the request and response from the methods.
