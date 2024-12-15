@@ -26,7 +26,7 @@ if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         log_message "Building ..."
         cd src/main/java
         pwd
-        /usr/bin/javac -d /root/scripts/build/classes -cp "../../libs/*" `find ./ -name "*.java"`
+        /usr/bin/javac -d /root/starter-snake-java/build/classes -cp "../../libs/*" `find ./ -name "*.java"`
 
         echo "Starting ..."
         log_message "Starting ..."
