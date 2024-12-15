@@ -296,7 +296,7 @@ public class Snake {
             } else {
                 currFoodScore = FOOD_SCORE;
             }
-            currFoodScore = 0; //no 51 TODO delete this
+            currFoodScore = 0; //no 69 TODO delete this
 
             for (Coord neighbor : neighbors) {
                 final int dist = foodDists[neighbor.x][neighbor.y];
