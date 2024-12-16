@@ -26,6 +26,10 @@ public class Coord {
         this.y = y;
     }
 
+    public Coord[] getNeighbors() {
+        return new Coord[]{new Coord(this.x + 1, this.y), new Coord(this.x - 1, this.y), new Coord(this.x, this.y + 1), new Coord(this.x, this.y - 1)};
+    }
+
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -37,5 +41,13 @@ public class Coord {
     @Override
     public int hashCode() {
         return Objects.hash(x, y);
+    }
+
+    int dist(Coord other) {
+        return Math.abs(x - other.x) + Math.abs(y - other.y);
+    }
+
+    boolean isNeighbour(final Coord other) {
+        return dist(other) == 1;
     }
 }

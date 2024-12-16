@@ -192,87 +192,84 @@ public class Snake {
         private MoveScore getScore(final GameState gameState) {
             int[] moveScores = new int[]{0, 0, 0, 0};
 
-            //Prevent your Battlesnake from moving out of bounds
-
-            if (gameState.head.x + 1 >= gameState.width) {
-                moveScores[RIGHT] += DIE_SCORE;
-            } else if (gameState.head.x <= 0) {
-                moveScores[LEFT] += DIE_SCORE;
-            }
-            if (gameState.head.y + 1 >= gameState.height) {
-                moveScores[UP] += DIE_SCORE;
-            } else if (gameState.head.y <= 0) {
-                moveScores[DOWN] += DIE_SCORE;
-            }
+            considerBounds(gameState, moveScores);
 
             //Prevent your Battlesnake from colliding
             //Consider duel fields
 
-            BattleSnake[] opponents = gameState.board.snakes;
-            boolean isHeadEdge = isEdge(gameState.head, gameState.width, gameState.height);
-            for (final BattleSnake battleSnake : opponents) {
-                Coord[] opponent = battleSnake.body;
-                markUnsafe(opponent, moveScores, gameState);
-                if (!Objects.equals(gameState.me.id, battleSnake.id)) {
-                    final Coord opponentHead = opponent[0];
-                    handleDuelField(opponentHead, opponent.length, moveScores, gameState);
-
-                    //Handle catching snakes on edge
-                    if (!isHeadEdge) {
-                        if (isEdge(opponentHead, gameState.width, gameState.height)) {
-                            if (isNeighbour(gameState.head, opponentHead)) {
-                                Coord[] moves = getInBoardNeighbors(opponentHead, true, gameState);
-                                if (moves.length == 1) {
-                                    updateScores(getInBoardNeighbors(moves[0], true, gameState),
-                                            CAPTURING_SCORE, gameState.head, moveScores);
-                                } else {
-                                    System.out.println("??? when checking for possible moves of caught snake");
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            Coord tail = gameState.body[gameState.body.length - 1];
-            gameState.isOccupied[tail.x][tail.y] = false;
+            stopCollisions(gameState, moveScores);
 
             //Handle Cavities
-            Coord[] neighbors = getInBoardNeighbors(gameState.head, true, gameState);
+            Coord[] neighbors = gameState.getInBoardNeighbors(gameState.head, true);
             StringBuilder string = new StringBuilder("LargeCavities: ");
 
-            boolean largeCavityExists = false;
-            Coord biggestCavity = gameState.head;
-            int biggestCavitySize = -1;
-            for (int i = 0; i < neighbors.length; i++) {
-                int size = getCavitySize(neighbors[i], gameState);
-                if (size >= 2 * gameState.me.body.length) {
-                    updateScore(neighbors[i], LARGE_CAVITY_SCORE, gameState.head, moveScores);
-                    string.append(i).append(",");
-                    largeCavityExists = true;
-                }
-                if (size > biggestCavitySize) {
-                    biggestCavitySize = size;
-                    biggestCavity = neighbors[i];
-                }
-            }
-            if (!largeCavityExists) {
-                updateScore(biggestCavity, LARGE_CAVITY_SCORE, gameState.head, moveScores);
-                string = new StringBuilder();
-                string.append("Largest cavity: ").append(biggestCavity);
-            }
+            handleCavities(gameState, moveScores, neighbors, string);
 
             //Reduce Edge-Score
-            for (Coord neighbor : neighbors) {
-                if (isEdge(neighbor, gameState.width, gameState.height)) {
-                    updateScore(neighbor, EDGE_SCORE, gameState.head, moveScores);
-                }
-            }
+            penalizeEdges(gameState, moveScores, neighbors);
 
             //Move towards food
-            gameState.isOccupied[gameState.head.x][gameState.head.y] = false;
-            int[][] foodDists = generateDistArray(gameState.food, gameState);
-            gameState.isOccupied[gameState.head.x][gameState.head.y] = true;
+            incentivizeFood(gameState, moveScores);
 
+            Move nextMove = chooseMove(moveScores, string);
+
+            return new MoveScore(nextMove, moveScores[nextMove.ordinal()], moveScores);
+        }
+
+        private Move chooseMove(final int[] moveScores, final StringBuilder string) {
+            Move nextMove = null;
+            int maxScore = Integer.MIN_VALUE;
+            for (Move move : Move.values()) {
+                final int ordinal = move.ordinal();
+                if (moveScores[ordinal] >= maxScore) {
+                    maxScore = moveScores[ordinal];
+                    nextMove = move;
+                }
+            }
+            logInfo(string.toString());
+            return nextMove;
+        }
+
+        private void incentivizeFood(final GameState gameState, final int[] moveScores) {
+            gameState.minOccupationTime[gameState.head.x][gameState.head.y] = 0;
+            int[][] foodDists = gameState.generateDistArray(gameState.food, this);
+            gameState.minOccupationTime[gameState.head.x][gameState.head.y] = gameState.me.length - 1;
+
+            printDists(foodDists);
+
+            int headDist = foodDists[gameState.head.x][gameState.head.y];
+            Coord[] neighbors = gameState.getInBoardNeighbors(gameState.head, true);
+            int currFoodScore = getCurrFoodScore(gameState);
+
+            for (Coord neighbor : neighbors) {
+                handleNeighbor(neighbor, moveScores, foodDists[neighbor.x][neighbor.y], headDist, currFoodScore, gameState);
+            }
+        }
+
+        private void handleNeighbor(final Coord neighbor, final int[] moveScores, final int dist, final int headDist, final int currFoodScore, final GameState gameState) {
+            if (dist < headDist) {
+                if (!updateScore(neighbor, currFoodScore, gameState.head, moveScores)) {
+                    System.out.println("???");
+                }
+            } else if (dist > headDist) {
+                if (!updateScore(neighbor, -currFoodScore, gameState.head, moveScores)) {
+                    System.out.println("???");
+                }
+            }
+        }
+
+        private int getCurrFoodScore(final GameState gameState) {
+            int currFoodScore;
+            if (gameState.me.health <= HP_THRESHOLD) {
+                currFoodScore = FOOD_SCORE * FOOD_SCORE_MULTIPLIER_WHEN_LOW;
+                logInfo("Low on hp; Searching food");
+            } else {
+                currFoodScore = FOOD_SCORE;
+            }
+            return currFoodScore;
+        }
+
+        private void printDists(final int[][] foodDists) {
             StringBuilder builder = new StringBuilder("\n");
             for (int y = foodDists[0].length - 1; y >= 0; y--) {
                 for (final int[] foodDist : foodDists) {
@@ -286,42 +283,86 @@ public class Snake {
                 builder.append("\n");
             }
             logInfo(builder.toString());
+        }
 
-            int headDist = foodDists[gameState.head.x][gameState.head.y];
-            neighbors = getInBoardNeighbors(gameState.head, true, gameState);
-            int currFoodScore;
-            if (gameState.me.health <= HP_THRESHOLD) {
-                currFoodScore = FOOD_SCORE * FOOD_SCORE_MULTIPLIER_WHEN_LOW;
-                logInfo("Low on hp; Searching food");
-            } else {
-                currFoodScore = FOOD_SCORE;
-            }
-
+        private void penalizeEdges(final GameState gameState, final int[] moveScores, final Coord[] neighbors) {
             for (Coord neighbor : neighbors) {
-                final int dist = foodDists[neighbor.x][neighbor.y];
-                if (dist < headDist) {
-                    if (!updateScore(neighbor, currFoodScore, gameState.head, moveScores)) {
-                        System.out.println("???");
-                    }
-                } else if (dist > headDist) {
-                    if (!updateScore(neighbor, -currFoodScore, gameState.head, moveScores)) {
-                        System.out.println("???");
+                if (gameState.isEdge(neighbor)) {
+                    updateScore(neighbor, EDGE_SCORE, gameState.head, moveScores);
+                }
+            }
+        }
+
+        private void handleCavities(final GameState gameState, final int[] moveScores, final Coord[] neighbors, StringBuilder string) {
+            boolean largeCavityExists = false;
+            Coord biggestCavity = gameState.head;
+            int biggestCavitySize = -1;
+            for (int i = 0; i < neighbors.length; i++) {
+                int size = gameState.getCavitySize(neighbors[i]);
+                if (size >= 2 * gameState.me.body.length) {
+                    updateScore(neighbors[i], LARGE_CAVITY_SCORE, gameState.head, moveScores);
+                    string.append(i).append(",");
+                    largeCavityExists = true;
+                }
+                if (size > biggestCavitySize) {
+                    biggestCavitySize = size;
+                    biggestCavity = neighbors[i];
+                }
+            }
+            if (!largeCavityExists) {
+                updateScore(biggestCavity, LARGE_CAVITY_SCORE, gameState.head, moveScores);
+                string.delete(0, string.length());
+                string.append("Largest cavity: ").append(biggestCavity);
+            }
+        }
+
+        private void stopCollisions(final GameState gameState, final int[] moveScores) {
+            BattleSnake[] opponents = gameState.board.snakes;
+            boolean isHeadEdge = gameState.isEdge(gameState.head);
+            for (final BattleSnake battleSnake : opponents) {
+                Coord[] opponent = battleSnake.body;
+                gameState.updateMinOccupationTime(battleSnake, moveScores, this);
+                if (!Objects.equals(gameState.me.id, battleSnake.id)) {
+                    final Coord opponentHead = opponent[0];
+                    handleDuelField(opponentHead, opponent.length, moveScores, gameState);
+
+                    //Handle catching snakes on edge
+                    incentivizeCatchingOnEdge(gameState, moveScores, isHeadEdge, opponentHead);
+                }
+            }
+            Coord tail = gameState.body[gameState.body.length - 1];
+            gameState.minOccupationTime[tail.x][tail.y] = 0;
+        }
+
+        private void incentivizeCatchingOnEdge(final GameState gameState, final int[] moveScores, final boolean isHeadEdge, final Coord opponentHead) {
+            if (!isHeadEdge) {
+                if (gameState.isEdge(opponentHead)) {
+                    if (gameState.head.isNeighbour(opponentHead)) {
+                        Coord[] moves = gameState.getInBoardNeighbors(opponentHead, true);
+                        if (moves.length == 1) {
+                            updateScores(gameState.getInBoardNeighbors(moves[0], true),
+                                    CAPTURING_SCORE, gameState.head, moveScores);
+                        } else {
+                            System.out.println("??? when checking for possible moves of caught snake");
+                        }
                     }
                 }
             }
+        }
 
-            Move nextMove = null;
-            int maxScore = Integer.MIN_VALUE;
-            for (Move move : Move.values()) {
-                final int ordinal = move.ordinal();
-                if (moveScores[ordinal] >= maxScore) {
-                    maxScore = moveScores[ordinal];
-                    nextMove = move;
-                }
+        private void considerBounds(final GameState gameState, final int[] moveScores) {
+            //Prevent your Battlesnake from moving out of bounds
+
+            if (gameState.head.x + 1 >= gameState.width) {
+                moveScores[RIGHT] += DIE_SCORE;
+            } else if (gameState.head.x <= 0) {
+                moveScores[LEFT] += DIE_SCORE;
             }
-            logInfo(string.toString());
-
-            return new MoveScore(nextMove, moveScores[nextMove.ordinal()], moveScores);
+            if (gameState.head.y + 1 >= gameState.height) {
+                moveScores[UP] += DIE_SCORE;
+            } else if (gameState.head.y <= 0) {
+                moveScores[DOWN] += DIE_SCORE;
+            }
         }
 
         private void updateScores(final Coord[] fields, final int score, Coord head, int[] moveScores) {
@@ -330,59 +371,10 @@ public class Snake {
             }
         }
 
-        private boolean isNeighbour(final Coord coord1, final Coord coord2) {
-            return dist(coord1, coord2) == 1;
-        }
-
-        private boolean isEdge(final Coord pos, final int width, final int height) {
-            return pos.x == 0 || pos.x == width - 1 || pos.y == 0 || pos.y == height - 1;
-        }
-
-        private int[][] generateDistArray(final Coord[] coords, final GameState gameState) {
-            int[][] result = new int[gameState.width][gameState.height];
-            for (final int[] ints : result) {
-                Arrays.fill(ints, Integer.MAX_VALUE);
-            }
-            Set<Coord> visited = new HashSet<>();
-            Queue<Coord> queue = new ArrayDeque<>();
-            for (Coord food : coords) {
-                queue.add(food);
-                result[food.x][food.y] = 0;
-                visited.add(food);
-            }
-            while (queue.size() > 0) {
-                Coord curr = queue.poll();
-                int currDist = result[curr.x][curr.y] + 1;
-                Coord[] neighbors = getInBoardNeighbors(curr, true, gameState);
-                for (Coord neighbor : neighbors) {
-                    if (!visited.contains(neighbor)) {
-                        if (currDist < result[neighbor.x][neighbor.y]) {
-                            result[neighbor.x][neighbor.y] = currDist;
-                            queue.add(neighbor);
-                            visited.add(neighbor);
-                        }
-                    }
-                }
-            }
-            return result;
-        }
-
-        public void markUnsafe(Coord[] snake, int[] moveScores, final GameState gameState) {
-            int max = snake.length;
-            if (!canEat(snake[0], gameState.food)) {
-                max--;
-            }
-            for (int i = 0; i < max; i++) {
-                Coord curr = snake[i];
-                gameState.isOccupied[curr.x][curr.y] = true;
-                updateScore(curr, DIE_SCORE, gameState.head, moveScores);
-            }
-        }
-
         public void handleDuelField(Coord otherHead, int opponentLength, final int[] moveScores, final GameState gameState) {
-            Coord[] candidateFields = getNeighbors(otherHead);
+            Coord[] candidateFields = otherHead.getNeighbors();
             for (Coord field : candidateFields) {
-                if (dist(gameState.head, field) == 1) {
+                if (gameState.head.dist(field) == 1) {
                     if (opponentLength >= gameState.me.length) {
                         updateScore(field, LOSING_DUEL_SCORE, gameState.head, moveScores);
                     } else {
@@ -390,14 +382,6 @@ public class Snake {
                     }
                 }
             }
-        }
-
-        public int dist(Coord field1, Coord field2) {
-            return Math.abs(field1.x - field2.x) + Math.abs(field1.y - field2.y);
-        }
-
-        public Coord[] getNeighbors(Coord pos) {
-            return new Coord[]{new Coord(pos.x + 1, pos.y), new Coord(pos.x - 1, pos.y), new Coord(pos.x, pos.y + 1), new Coord(pos.x, pos.y - 1)};
         }
 
         public boolean updateScore(Coord field, int score, Coord head, int[] moveScores) {
@@ -420,77 +404,6 @@ public class Snake {
             } else {
                 return false;
             }
-        }
-
-        public boolean canEat(Coord head, Coord[] food) {
-            Coord[] nextFields = getNeighbors(head);
-            for (Coord field : nextFields) {
-                for (final Coord coord : food) {
-                    if (field.x == coord.x && field.y == coord.y) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        private Coord[] getInBoardNeighbors(final Coord pos, final boolean mustBeFree, final GameState gameState) {
-            int x = pos.x;
-            int y = pos.y;
-
-            List<Coord> neighbors = new ArrayList<>(4);
-
-            if (x + 1 < gameState.width) {
-                if (!mustBeFree || !gameState.isOccupied[x + 1][y]) {
-                    neighbors.add(new Coord(x + 1, y));
-                }
-            }
-            if (x - 1 >= 0) {
-                if (!mustBeFree || !gameState.isOccupied[x - 1][y]) {
-                    neighbors.add(new Coord(x - 1, y));
-                }
-            }
-            if (y + 1 < gameState.height) {
-                if (!mustBeFree || !gameState.isOccupied[x][y + 1]) {
-                    neighbors.add(new Coord(x, y + 1));
-                }
-            }
-            if (y - 1 >= 0) {
-                if (!mustBeFree || !gameState.isOccupied[x][y - 1]) {
-                    neighbors.add(new Coord(x, y - 1));
-                }
-            }
-
-            return neighbors.toArray(Coord[]::new);
-        }
-
-        public int getCavitySize(final Coord pos, final GameState gameState) {
-            if (gameState.isOccupied[pos.x][pos.y]) {
-                return 0;
-            }
-
-            Set<Coord> queued = new HashSet<>();
-            Stack<Coord> stack = new Stack<>();
-            stack.push(pos);
-            int cavitySize = 0;
-
-            while (stack.size() > 0) {
-                Coord current = stack.pop();
-
-                cavitySize++;
-
-                Coord[] neighbors = getInBoardNeighbors(current, false, gameState);
-                for (Coord neighbor : neighbors) {
-                    if (!gameState.isOccupied[neighbor.x][neighbor.y]) {
-                        if (!queued.contains(neighbor)) {
-                            stack.add(neighbor);
-                            queued.add(neighbor);
-                        }
-                    }
-                }
-            }
-
-            return cavitySize;
         }
 
         /**

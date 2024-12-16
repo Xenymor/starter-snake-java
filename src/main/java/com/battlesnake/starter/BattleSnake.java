@@ -24,4 +24,16 @@ public class BattleSnake {
         shout = jsonNode.get("shout").asText();
         head = new Coord(jsonNode.get("head"));
     }
+
+    public boolean canEat(Coord[] food) {
+        Coord[] nextFields = body[0].getNeighbors();
+        for (Coord field : nextFields) {
+            for (final Coord coord : food) {
+                if (field.x == coord.x && field.y == coord.y) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
