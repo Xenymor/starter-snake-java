@@ -6,7 +6,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Objects;
 
-public class Scorer {
+public class Evaluator {
     final BufferedWriter outputStream;
     final Logger log;
 
@@ -25,12 +25,12 @@ public class Scorer {
     final int HP_THRESHOLD = 25;
     final int FOOD_SCORE_MULTIPLIER_WHEN_LOW = 3;
 
-    public Scorer(final BufferedWriter outputStream, final Logger log) {
+    public Evaluator(final BufferedWriter outputStream, final Logger log) {
         this.outputStream = outputStream;
         this.log = log;
     }
 
-    public MoveScore getScore(final GameState gameState) {
+    public MoveScore evaluate(final GameState gameState) {
         int[] moveScores = new int[]{0, 0, 0, 0};
 
         considerBounds(gameState, moveScores);

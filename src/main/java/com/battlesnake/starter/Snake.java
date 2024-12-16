@@ -58,7 +58,7 @@ public class Snake {
          * For the start/end request
          */
         private static final Map<String, String> EMPTY = new HashMap<>();
-        Scorer scorer;
+        Evaluator evaluator;
 
         /**
          * Generic processor that prints out the request and response from the methods.
@@ -126,7 +126,7 @@ public class Snake {
 
         public Map<String, String> start(JsonNode startRequest) {
             logInfo("GAME START");
-            scorer = new Scorer(outputStream, LOG);
+            evaluator = new Evaluator(outputStream, LOG);
             return EMPTY;
         }
 
@@ -154,7 +154,7 @@ public class Snake {
 
             GameState gameState = new GameState(moveRequest);
 
-            Scorer.MoveScore moveScore = scorer.getScore(gameState);
+            Evaluator.MoveScore moveScore = evaluator.evaluate(gameState);
 
             final String moveString = Objects.requireNonNull(moveScore.bestMove).toString().toLowerCase();
             logInfo("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScore.moveScores));

@@ -25,7 +25,7 @@ public class GameState {
         minOccupationTime = new int[width][height];
     }
 
-    int[][] generateDistArray(final Coord[] coords, final Scorer scorer) {
+    int[][] generateDistArray(final Coord[] coords, final Evaluator evaluator) {
         int[][] result = new int[width][height];
         for (final int[] ints : result) {
             Arrays.fill(ints, Integer.MAX_VALUE);
@@ -89,7 +89,7 @@ public class GameState {
     }
 
     //TODO make prettier
-    void updateMinOccupationTime(BattleSnake snake, int[] moveScores, final Scorer scorer) {
+    void updateMinOccupationTime(BattleSnake snake, int[] moveScores, final Evaluator evaluator) {
         for (int i = 0; i < snake.length; i++) {
             Coord curr = snake.body[i];
             minOccupationTime[curr.x][curr.y] = snake.length - i - 1;
@@ -97,7 +97,7 @@ public class GameState {
                 if (snake.canEat(food)) {
                     minOccupationTime[curr.x][curr.y] = 1;
                 } else {
-                    scorer.updateScore(curr, scorer.DIE_SCORE, head, moveScores);
+                    evaluator.updateScore(curr, evaluator.DIE_SCORE, head, moveScores);
                 }
             }
         }
