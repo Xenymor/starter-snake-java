@@ -1,11 +1,10 @@
 package com.battlesnake.starter;
 
-import com.battlesnake.starter.GameState.CoordInt;
 import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.Objects;
+import java.util.*;
 
 public class Evaluator {
     final BufferedWriter outputStream;
@@ -91,7 +90,7 @@ public class Evaluator {
         }
 
         gameState.me.generateDistArray(gameState);
-        CoordInt[][] dists = gameState.me.distances;
+        CoordsInt[][] dists = gameState.me.distances;
 
         printDists(dists);
 
@@ -101,24 +100,38 @@ public class Evaluator {
         int lowestDist = Integer.MAX_VALUE;
         Coord nearest = null;
         for (Coord food : gameState.food) {
-            final CoordInt curr = dists[food.x][food.y];
+            final CoordsInt curr = dists[food.x][food.y];
             if (curr == null) {
                 continue;
             }
-            if (curr.count <= lowestDist) {
-                lowestDist = curr.count;
+            if (curr.number <= lowestDist) {
+                lowestDist = curr.number;
                 nearest = food;
             }
         }
+
+        //TODO penalize moving away
         if (nearest != null) {
             if (!contains(neighbors, nearest)) {
-                while (!contains(neighbors, nearest)) {
-                    nearest = dists[nearest.x][nearest.y].coord;
+                Set<Coord> added = new HashSet<>();
+                Queue<Coord> toCheck = new ArrayDeque<>();
+                toCheck.add(nearest);
+                added.add(nearest);
+
+                while (toCheck.size() > 0) {
+                    Coord curr = toCheck.poll();
+                    for (Coord coord : dists[curr.x][curr.y].coords) {
+                        if (!added.contains(coord)) {
+                            added.add(coord);
+                            if (contains(neighbors, curr)) {
+                                updateScore(curr, currFoodScore, gameState.head, moveScores);
+                            } else {
+                                toCheck.add(coord);
+                            }
+                        }
+                    }
                 }
             }
-
-            updateScore(nearest, currFoodScore, gameState.head, moveScores);
-            //TODO penalize moving away
         }
     }
 
@@ -142,11 +155,11 @@ public class Evaluator {
         return currFoodScore;
     }
 
-    private void printDists(final CoordInt[][] foodDists) {
+    private void printDists(final CoordsInt[][] foodDists) {
         StringBuilder builder = new StringBuilder("\n");
         for (int y = foodDists[0].length - 1; y >= 0; y--) {
-            for (final CoordInt[] foodDist : foodDists) {
-                final int dist = foodDist[y] == null ? Integer.MAX_VALUE : foodDist[y].count;
+            for (final CoordsInt[] foodDist : foodDists) {
+                final int dist = foodDist[y] == null ? Integer.MAX_VALUE : foodDist[y].number;
                 if (dist == Integer.MAX_VALUE) {
                     builder.append("--");
                 } else if (dist > 15) {
