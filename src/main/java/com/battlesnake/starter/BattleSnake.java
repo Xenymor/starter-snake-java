@@ -1,6 +1,12 @@
 package com.battlesnake.starter;
 
+import com.battlesnake.starter.GameState.CoordInt;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import java.util.ArrayDeque;
+import java.util.HashSet;
+import java.util.Queue;
+import java.util.Set;
 
 public class BattleSnake {
     public final String id;
@@ -12,6 +18,7 @@ public class BattleSnake {
     public final String latency;
     public final int length;
     public final String shout;
+    public CoordInt[][] distances;
 
     public BattleSnake(final JsonNode jsonNode) {
         id = jsonNode.get("id").asText();
@@ -35,5 +42,31 @@ public class BattleSnake {
             }
         }
         return false;
+    }
+
+
+    void generateDistArray(GameState gameState) {
+        distances = new CoordInt[gameState.width][gameState.height];
+
+        Set<Coord> visited = new HashSet<>();
+        Queue<CoordInt> queue = new ArrayDeque<>();
+
+        queue.add(new CoordInt(head, 0));
+
+        while (queue.size() > 0) {
+            CoordInt curr = queue.poll();
+
+            int newDist = curr.count + 1;
+
+            Coord[] neighbors = gameState.getInBoardNeighbors(curr.coord, newDist);
+
+            for (Coord neighbor : neighbors) {
+                if (!visited.contains(neighbor)) {
+                    distances[neighbor.x][neighbor.y] = new CoordInt(curr.coord, newDist);
+                    queue.add(new CoordInt(neighbor, newDist));
+                    visited.add(neighbor);
+                }
+            }
+        }
     }
 }

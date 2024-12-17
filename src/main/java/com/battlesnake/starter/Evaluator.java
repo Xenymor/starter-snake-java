@@ -1,5 +1,6 @@
 package com.battlesnake.starter;
 
+import com.battlesnake.starter.GameState.CoordInt;
 import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
@@ -57,7 +58,7 @@ public class Evaluator {
         return new MoveScore(nextMove, moveScores[nextMove.ordinal()], moveScores);
     }
 
-    private void logInfo(final String msg) {
+    void logInfo(final String msg) {
         log.info(msg);
         try {
             outputStream.append(msg);
@@ -85,31 +86,49 @@ public class Evaluator {
     }
 
     private void incentivizeFood(final GameState gameState, final int[] moveScores) {
-        gameState.minOccupationTime[gameState.head.x][gameState.head.y] = 0;
-        int[][] foodDists = gameState.generateDistArray(gameState.food, this);
-        gameState.minOccupationTime[gameState.head.x][gameState.head.y] = gameState.me.length - 1;
+        if (gameState.food.length == 0) {
+            return;
+        }
 
-        printDists(foodDists);
+        gameState.me.generateDistArray(gameState);
+        CoordInt[][] dists = gameState.me.distances;
 
-        int headDist = foodDists[gameState.head.x][gameState.head.y];
+        printDists(dists);
+
         Coord[] neighbors = gameState.getInBoardNeighbors(gameState.head, true);
         int currFoodScore = getCurrFoodScore(gameState);
 
-        for (Coord neighbor : neighbors) {
-            handleNeighbor(neighbor, moveScores, foodDists[neighbor.x][neighbor.y], headDist, currFoodScore, gameState);
+        int lowestDist = Integer.MAX_VALUE;
+        Coord nearest = null;
+        for (Coord food : gameState.food) {
+            final CoordInt curr = dists[food.x][food.y];
+            if (curr == null) {
+                continue;
+            }
+            if (curr.count <= lowestDist) {
+                lowestDist = curr.count;
+                nearest = food;
+            }
+        }
+        if (nearest != null) {
+            if (!contains(neighbors, nearest)) {
+                while (!contains(neighbors, nearest)) {
+                    nearest = dists[nearest.x][nearest.y].coord;
+                }
+            }
+
+            updateScore(nearest, currFoodScore, gameState.head, moveScores);
+            //TODO penalize moving away
         }
     }
 
-    private void handleNeighbor(final Coord neighbor, final int[] moveScores, final int dist, final int headDist, final int currFoodScore, final GameState gameState) {
-        if (dist < headDist) {
-            if (!updateScore(neighbor, currFoodScore, gameState.head, moveScores)) {
-                System.out.println("???");
-            }
-        } else if (dist > headDist) {
-            if (!updateScore(neighbor, -currFoodScore, gameState.head, moveScores)) {
-                System.out.println("???");
+    private boolean contains(final Coord[] arr, final Coord coord) {
+        for (Coord curr : arr) {
+            if (curr.equals(coord)) {
+                return true;
             }
         }
+        return false;
     }
 
     private int getCurrFoodScore(final GameState gameState) {
@@ -123,15 +142,17 @@ public class Evaluator {
         return currFoodScore;
     }
 
-    private void printDists(final int[][] foodDists) {
+    private void printDists(final CoordInt[][] foodDists) {
         StringBuilder builder = new StringBuilder("\n");
         for (int y = foodDists[0].length - 1; y >= 0; y--) {
-            for (final int[] foodDist : foodDists) {
-                final int dist = foodDist[y];
+            for (final CoordInt[] foodDist : foodDists) {
+                final int dist = foodDist[y] == null ? Integer.MAX_VALUE : foodDist[y].count;
                 if (dist == Integer.MAX_VALUE) {
-                    builder.append("-");
+                    builder.append("--");
+                } else if (dist > 15) {
+                    builder.append("ll");
                 } else {
-                    builder.append(dist);
+                    builder.append(String.format("%02d", dist));
                 }
             }
             builder.append("\n");
@@ -185,7 +206,7 @@ public class Evaluator {
             }
         }
         Coord tail = gameState.body[gameState.body.length - 1];
-        gameState.minOccupationTime[tail.x][tail.y] = 0;
+        gameState.minOccupationTime[tail.x][tail.y] = 1;
     }
 
     private void incentivizeCatchingOnEdge(final GameState gameState, final int[] moveScores, final boolean isHeadEdge, final Coord opponentHead) {
