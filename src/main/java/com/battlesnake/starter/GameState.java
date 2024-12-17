@@ -104,6 +104,8 @@ public class GameState {
                 } else {
                     evaluator.updateScore(curr, evaluator.DIE_SCORE, head, moveScores);
                 }
+            } else {
+                evaluator.updateScore(curr, evaluator.DIE_SCORE, head, moveScores);
             }
         }
     }
