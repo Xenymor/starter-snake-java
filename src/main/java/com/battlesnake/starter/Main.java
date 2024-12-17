@@ -24,10 +24,10 @@ import static spark.Spark.*;
  * For instructions see
  * https://github.com/BattlesnakeOfficial/starter-snake-java/README.md
  */
-public class Snake {
+public class Main {
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
     private static final Handler HANDLER = new Handler();
-    private static final Logger LOG = LoggerFactory.getLogger(Snake.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     /**
      * Main entry point.

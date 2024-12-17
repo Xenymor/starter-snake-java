@@ -50,7 +50,9 @@ public class BattleSnake {
         Set<Coord> visited = new HashSet<>();
         Queue<CoordInt> queue = new ArrayDeque<>();
 
+        visited.add(head);
         queue.add(new CoordInt(head, 0));
+        distances[head.x][head.y] = new CoordsInt(0);
 
         while (queue.size() > 0) {
             CoordInt curr = queue.poll();
@@ -64,8 +66,14 @@ public class BattleSnake {
                     distances[neighbor.x][neighbor.y] = new CoordsInt(newDist, curr.coord);
                     queue.add(new CoordInt(neighbor, newDist));
                     visited.add(neighbor);
-                } else if (distances[neighbor.x][neighbor.y].number == newDist) {
-                    distances[neighbor.x][neighbor.y].coords.add(curr.coord);
+                } else {
+                    final CoordsInt coordsInt = distances[neighbor.x][neighbor.y];
+                    if (coordsInt.number == newDist) {
+                        coordsInt.coords.add(curr.coord);
+                    } else if (newDist < coordsInt.number) {
+                        coordsInt.coords.clear();
+                        coordsInt.coords.add(curr.coord);
+                    }
                 }
             }
         }

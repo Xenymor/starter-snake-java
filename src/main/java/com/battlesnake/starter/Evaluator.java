@@ -112,7 +112,9 @@ public class Evaluator {
 
         //TODO penalize moving away
         if (nearest != null) {
-            if (!contains(neighbors, nearest)) {
+            if (contains(neighbors, nearest)) {
+                updateScore(nearest, currFoodScore, gameState.head, moveScores);
+            } else {
                 Set<Coord> added = new HashSet<>();
                 Queue<Coord> toCheck = new ArrayDeque<>();
                 toCheck.add(nearest);
@@ -158,6 +160,7 @@ public class Evaluator {
     private void printDists(final CoordsInt[][] foodDists) {
         StringBuilder builder = new StringBuilder("\n");
         for (int y = foodDists[0].length - 1; y >= 0; y--) {
+            builder.append("|");
             for (final CoordsInt[] foodDist : foodDists) {
                 final int dist = foodDist[y] == null ? Integer.MAX_VALUE : foodDist[y].number;
                 if (dist == Integer.MAX_VALUE) {
@@ -167,6 +170,7 @@ public class Evaluator {
                 } else {
                     builder.append(String.format("%02d", dist));
                 }
+                builder.append("|");
             }
             builder.append("\n");
         }
