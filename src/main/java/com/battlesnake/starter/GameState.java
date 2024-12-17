@@ -101,7 +101,6 @@ public class GameState {
             if (i == snake.length - 1) {
                 if (snake.canEat(food)) {
                     minOccupationTime[curr.x][curr.y] = 2;
-                } else {
                     evaluator.updateScore(curr, evaluator.DIE_SCORE, head, moveScores);
                 }
             } else {
