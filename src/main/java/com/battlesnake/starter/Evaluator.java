@@ -85,11 +85,12 @@ public class Evaluator {
     }
 
     private void incentivizeFood(final GameState gameState, final int[] moveScores) {
+        gameState.me.generateDistArray(gameState);
+
         if (gameState.food.length == 0) {
             return;
         }
 
-        gameState.me.generateDistArray(gameState);
         CoordsInt[][] dists = gameState.me.distances;
 
         printDists(dists);
@@ -125,8 +126,8 @@ public class Evaluator {
                     for (Coord coord : dists[curr.x][curr.y].coords) {
                         if (!added.contains(coord)) {
                             added.add(coord);
-                            if (contains(neighbors, curr)) {
-                                updateScore(curr, currFoodScore, gameState.head, moveScores);
+                            if (contains(neighbors, coord)) {
+                                updateScore(coord, currFoodScore, gameState.head, moveScores);
                             } else {
                                 toCheck.add(coord);
                             }
@@ -187,24 +188,28 @@ public class Evaluator {
 
     private void handleCavities(final GameState gameState, final int[] moveScores, final Coord[] neighbors, StringBuilder string) {
         boolean largeCavityExists = false;
-        Coord biggestCavity = gameState.head;
+        List<Coord> biggestCavities = new ArrayList<>();
         int biggestCavitySize = -1;
         for (int i = 0; i < neighbors.length; i++) {
-            int size = gameState.getCavitySize(neighbors[i]);
+            final Coord neighbor = neighbors[i];
+            int size = gameState.getCavitySize(neighbor);
             if (size >= 2 * gameState.me.body.length) {
-                updateScore(neighbors[i], LARGE_CAVITY_SCORE, gameState.head, moveScores);
+                updateScore(neighbor, LARGE_CAVITY_SCORE, gameState.head, moveScores);
                 string.append(i).append(",");
                 largeCavityExists = true;
             }
-            if (size > biggestCavitySize) {
+            if (size == biggestCavitySize) {
+                biggestCavities.add(neighbor);
+            } else if (size > biggestCavitySize) {
                 biggestCavitySize = size;
-                biggestCavity = neighbors[i];
+                biggestCavities.clear();
+                biggestCavities.add(neighbor);
             }
         }
         if (!largeCavityExists) {
-            updateScore(biggestCavity, LARGE_CAVITY_SCORE, gameState.head, moveScores);
+            updateScores(biggestCavities.toArray(Coord[]::new), LARGE_CAVITY_SCORE, gameState.head, moveScores);
             string.delete(0, string.length());
-            string.append("Largest cavity: ").append(biggestCavity);
+            string.append("Largest cavity: ").append(biggestCavities);
         }
     }
 

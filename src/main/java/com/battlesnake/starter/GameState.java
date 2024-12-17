@@ -99,6 +99,7 @@ public class GameState {
             Coord curr = snake.body[i];
             minOccupationTime[curr.x][curr.y] = snake.length - i;
             if (i == snake.length - 1) {
+                //TODO for all fields
                 if (snake.canEat(food)) {
                     minOccupationTime[curr.x][curr.y] = 2;
                     evaluator.updateScore(curr, evaluator.DIE_SCORE, head, moveScores);
