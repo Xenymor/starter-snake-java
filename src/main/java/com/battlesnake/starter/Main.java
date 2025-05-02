@@ -109,7 +109,7 @@ public class Main {
             response.put("author", "Xenymor");
             response.put("color", "#e04a00");
             response.put("head", "viper");
-            response.put("tail", "freckled");
+            response.put("tail", "flame");
             return response;
         }
 
