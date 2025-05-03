@@ -107,7 +107,7 @@ public class Main {
             Map<String, String> response = new HashMap<>();
             response.put("apiversion", "1");
             response.put("author", "Xenymor");
-            response.put("color", "#e04a00");
+            response.put("color", "#e04a01");
             response.put("head", "viper");
             response.put("tail", "flame");
             return response;
