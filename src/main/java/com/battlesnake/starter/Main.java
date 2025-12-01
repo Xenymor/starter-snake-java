@@ -30,7 +30,7 @@ public class Main {
      *
      * @param args are ignored.
      */
-    
+
     public static void main(String[] args) {
         String port = System.getProperty("PORT");
         if (port == null) {

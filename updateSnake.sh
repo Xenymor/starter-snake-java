@@ -23,7 +23,7 @@ if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         echo "Starting ..."
         cd ../../../build/classes
         pwd
-        nohup java -cp "../../src/libs/*:." com.battlesnake.starter.Snake >> ~/starter-snake-java/logs/output.log &
+        nohup java -cp "../../src/libs/*:." com.battlesnake.starter.Main >> /dev/null &
 
         echo "Finished"
 
