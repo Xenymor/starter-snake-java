@@ -15,15 +15,7 @@ if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         echo "Killing all other java processes ..."
         killall java
 
-        echo "Building ..."
-        cd src/main/java
-        pwd
-        /usr/bin/javac -d /root/starter-snake-java/build/classes -cp "../../libs/*" `find ./ -name "*.java"`
-
-        echo "Starting ..."
-        cd ../../../build/classes
-        pwd
-        nohup java -cp "../../src/libs/*:." com.battlesnake.starter.Main >> /dev/null &
+        ./run.sh
 
         echo "Finished"
 
