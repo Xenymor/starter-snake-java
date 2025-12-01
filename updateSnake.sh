@@ -1,11 +1,5 @@
 #!/bin/bash
 
-LOG_FILE="/root/snakeLogfile.log"
-# Function to log messages with timestamps
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
-}
-
 cd /root/starter-snake-java/
 
 git fetch origin
@@ -19,23 +13,19 @@ if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         git pull
 
         echo "Killing all other java processes ..."
-        log_message "Killing all other java processes ..."
         killall java
 
         echo "Building ..."
-        log_message "Building ..."
         cd src/main/java
         pwd
         /usr/bin/javac -d /root/starter-snake-java/build/classes -cp "../../libs/*" `find ./ -name "*.java"`
 
         echo "Starting ..."
-        log_message "Starting ..."
         cd ../../../build/classes
         pwd
         nohup java -cp "../../src/libs/*:." com.battlesnake.starter.Snake >> ~/starter-snake-java/logs/output.log &
 
         echo "Finished"
-        log_message "Finished"
 
 else
         echo "No Changes detected."

@@ -126,7 +126,7 @@ public class Main {
 
         public Map<String, String> start(JsonNode startRequest) {
             logInfo("GAME START");
-            evaluator = new Evaluator(outputStream, LOG);
+            evaluator = new Evaluator(LOG);
             return EMPTY;
         }
 
@@ -157,12 +157,9 @@ public class Main {
             Evaluator.MoveScore moveScore = evaluator.evaluate(gameState);
 
             final String moveString = Objects.requireNonNull(moveScore.bestMove).toString().toLowerCase();
-            logInfo("MOVE " + moveRequest.get("turn").asInt() + ":" + moveString + " ;scores:" + Arrays.toString(moveScore.moveScores));
 
             Map<String, String> answer = new HashMap<>();
             answer.put("move", moveString);
-
-            logInfo("MOVE " + moveString);
 
             return answer;
         }
@@ -179,31 +176,7 @@ public class Main {
          * @return responses back to the engine are ignored.
          */
         public Map<String, String> end(JsonNode endRequest) {
-            logInfo("END");
             return EMPTY;
-        }
-    }
-
-    static BufferedWriter outputStream;
-
-    static {
-        try {
-            outputStream = new BufferedWriter(new FileWriter("logfile.log"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void logInfo(final String msg) {
-        LOG.info(msg);
-        try {
-            outputStream.append(msg);
-        } catch (IOException e) {
-            try {
-                outputStream.append(e.toString());
-            } catch (IOException ex) {
-                e.printStackTrace();
-            }
         }
     }
 

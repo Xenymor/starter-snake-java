@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.*;
 
 public class Evaluator {
-    final BufferedWriter outputStream;
     final Logger log;
 
     private final int LEFT = 0;
@@ -25,8 +24,7 @@ public class Evaluator {
     final int HP_THRESHOLD = 25;
     final int FOOD_SCORE_MULTIPLIER_WHEN_LOW = 3;
 
-    public Evaluator(final BufferedWriter outputStream, final Logger log) {
-        this.outputStream = outputStream;
+    public Evaluator(final Logger log) {
         this.log = log;
     }
 
@@ -59,15 +57,6 @@ public class Evaluator {
 
     void logInfo(final String msg) {
         log.info(msg);
-        try {
-            outputStream.append(msg);
-        } catch (IOException e) {
-            try {
-                outputStream.append(e.toString());
-            } catch (IOException ex) {
-                e.printStackTrace();
-            }
-        }
     }
 
     private Move chooseMove(final int[] moveScores, final StringBuilder string) {
