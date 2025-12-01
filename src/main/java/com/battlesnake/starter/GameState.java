@@ -125,7 +125,7 @@ public class GameState {
         queued.add(pos);
         int cavitySize = 0;
 
-        while (stack.size() > 0) {
+        while (!stack.isEmpty()) {
             CoordInt current = stack.pop();
 
             cavitySize++;

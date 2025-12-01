@@ -2,8 +2,6 @@ package com.battlesnake.starter;
 
 import org.slf4j.Logger;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
 import java.util.*;
 
 public class Evaluator {
@@ -110,7 +108,7 @@ public class Evaluator {
                 toCheck.add(nearest);
                 added.add(nearest);
 
-                while (toCheck.size() > 0) {
+                while (!toCheck.isEmpty()) {
                     Coord curr = toCheck.poll();
                     for (Coord coord : dists[curr.x][curr.y].coords) {
                         if (!added.contains(coord)) {

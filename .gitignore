@@ -9,6 +9,4 @@ target/
 bin/
 *.log
 *.sh
-*.log
-logfile.log
 logfile.log

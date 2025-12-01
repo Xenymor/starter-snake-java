@@ -54,7 +54,7 @@ public class BattleSnake {
         queue.add(new CoordInt(head, 0));
         distances[head.x][head.y] = new CoordsInt(0);
 
-        while (queue.size() > 0) {
+        while (!queue.isEmpty()) {
             CoordInt curr = queue.poll();
 
             int newDist = curr.count + 1;

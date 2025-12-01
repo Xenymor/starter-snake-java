@@ -8,10 +8,6 @@ import org.slf4j.LoggerFactory;
 import spark.Request;
 import spark.Response;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -22,7 +18,7 @@ import static spark.Spark.*;
  * This is a simple BattleSnake server written in Java.
  * <p>
  * For instructions see
- * https://github.com/BattlesnakeOfficial/starter-snake-java/README.md
+ * <a href="https://github.com/BattlesnakeOfficial/starter-snake-java/">GitHub of the original</a>
  */
 public class Main {
     private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
@@ -68,23 +64,13 @@ public class Main {
                 JsonNode parsedRequest = JSON_MAPPER.readTree(req.body());
                 String uri = req.uri();
                 LOG.info("{} called with: {}", uri, req.body());
-                Map<String, String> snakeResponse;
-                switch (uri) {
-                    case "/":
-                        snakeResponse = index();
-                        break;
-                    case "/start":
-                        snakeResponse = start(parsedRequest);
-                        break;
-                    case "/move":
-                        snakeResponse = move(parsedRequest);
-                        break;
-                    case "/end":
-                        snakeResponse = end(parsedRequest);
-                        break;
-                    default:
-                        throw new IllegalAccessError("Strange call made to the snake: " + uri);
-                }
+                Map<String, String> snakeResponse = switch (uri) {
+                    case "/" -> index();
+                    case "/start" -> start(parsedRequest);
+                    case "/move" -> move(parsedRequest);
+                    case "/end" -> end(parsedRequest);
+                    default -> throw new IllegalAccessError("Strange call made to the snake: " + uri);
+                };
 
                 LOG.info("Responding with: {}", JSON_MAPPER.writeValueAsString(snakeResponse));
 
@@ -125,7 +111,6 @@ public class Main {
          */
 
         public Map<String, String> start(JsonNode startRequest) {
-            logInfo("GAME START");
             evaluator = new Evaluator(LOG);
             return EMPTY;
         }
