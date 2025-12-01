@@ -89,7 +89,7 @@ public class Main {
          * @return a response back to the engine containing the BattleSnake setUP
          * values.
          */
-        
+
         public Map<String, String> index() {
             Map<String, String> response = new HashMap<>();
             response.put("apiversion", "1");
@@ -137,6 +137,10 @@ public class Main {
 
 
         public Map<String, String> move(JsonNode moveRequest) {
+
+            if (evaluator == null) {
+                evaluator = new Evaluator(LOG);
+            }
 
             GameState gameState = new GameState(moveRequest);
 
