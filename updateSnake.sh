@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /root/starter-snake-java/
+cd ~/starter-snake-java/
 
 git fetch origin
 
