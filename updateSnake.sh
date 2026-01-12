@@ -9,7 +9,6 @@ REMOTE_HASH=$(git rev-parse origin/master)
 
 if [ "$LOCAL_HASH" != "$REMOTE_HASH" ]; then
         echo "Changes detected!"
-        log_message "Changes detected!"
         git pull
 
         echo "Killing all other java processes ..."
